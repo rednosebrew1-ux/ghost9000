@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ghost 9000</title>
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0d0d0d;min-height:100dvh;}
+#app{
+  font-family:'Nunito',sans-serif;
+  background:#0d0d0d;
+  padding:24px 20px;color:#e8e8e8;
+  min-height:100dvh;width:100%;position:relative;overflow:hidden;
+}
+#app::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(160,100,255,0.18) 0%,transparent 65%),
+             radial-gradient(ellipse at 80% 90%,rgba(100,200,255,0.08) 0%,transparent 50%);
+  pointer-events:none;
+}
+h1{font-family:'Creepster',cursive;font-size:44px;letter-spacing:3px;text-align:center;line-height:1;margin-bottom:18px;color:#c084fc;text-shadow:0 0 20px rgba(192,132,252,0.5);}
+.ghost-icon{text-align:center;font-size:40px;margin-bottom:6px;}
+.float{animation:float 3s ease-in-out infinite;}
+.pulse{animation:ghostPulse 0.3s ease-in-out infinite alternate;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+@keyframes ghostPulse{0%{transform:scale(1) rotate(-3deg);}100%{transform:scale(1.08) rotate(3deg);}}
+@keyframes ghostBob{0%{transform:scale(1);}100%{transform:scale(1.12);}}
+.admin-link{text-align:center;margin-bottom:14px;}
+.admin-link button{background:none;border:none;color:#333;font-size:11px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-family:'Nunito',sans-serif;padding:4px 8px;border-radius:6px;transition:color 0.2s;}
+.admin-link button:hover{color:#666;}
+.admin-panel{background:#111;border:1px solid #2a2a2a;border-radius:14px;padding:16px;margin-bottom:16px;}
+.admin-panel h3{font-family:'Creepster',cursive;font-size:18px;color:#c084fc;margin-bottom:12px;letter-spacing:1px;}
+.pw-row{display:flex;gap:8px;margin-bottom:10px;}
+.field{flex:1;padding:10px 14px;border-radius:10px;border:1.5px solid #2a2a2a;background:#1a1a1a;color:#e8e8e8;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;outline:none;}
+.field::placeholder{color:#444;}
+.field:focus{border-color:#7c3aed;}
+.btn-g{padding:10px 16px;border-radius:10px;border:none;background:#7c3aed;color:#fff;font-family:'Creepster',cursive;font-size:17px;letter-spacing:1px;cursor:pointer;white-space:nowrap;transition:transform 0.1s,background 0.2s;}
+.btn-g:active{transform:scale(0.95);}
+.btn-g.green{background:#16a34a;}
+.btn-g.amber{background:#b45309;}
+.admin-status{font-size:12px;margin-top:6px;color:#555;min-height:16px;}
+.admin-status.ok{color:#4ade80;}
+.admin-status.err{color:#f87171;}
+.section-divider{border:none;border-top:1px solid #222;margin:12px 0;}
+.screen{display:none;text-align:center;padding:20px 0;}
+.screen.active{display:block;}
+.big-ghost{font-size:64px;margin-bottom:16px;display:inline-block;}
+.screen-msg{font-size:15px;color:#666;margin-bottom:8px;}
+.screen-name{font-family:'Creepster',cursive;font-size:32px;color:#c084fc;margin-bottom:20px;}
+.tap-btn{font-family:'Creepster',cursive;font-size:22px;letter-spacing:1px;background:#7c3aed;border:none;color:#fff;padding:16px 40px;border-radius:16px;cursor:pointer;transition:transform 0.1s;display:inline-block;}
+.tap-btn:active{transform:scale(0.96);}
+.mic-btn{margin-top:16px;width:68px;height:68px;border-radius:50%;border:2px solid #7c3aed;background:#1a1a1a;color:#c084fc;font-size:28px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.mic-btn.active{background:#7c3aed;color:#fff;animation:micPulse 0.8s ease-in-out infinite alternate;}
+@keyframes micPulse{0%{box-shadow:0 0 0 0 rgba(124,58,237,0.4);}100%{box-shadow:0 0 0 14px rgba(124,58,237,0);}}
+.transcript{margin-top:10px;font-size:13px;color:#444;font-style:italic;}
+.type-row{display:flex;gap:8px;margin-top:16px;}
+.err-msg{font-size:11px;color:#555;margin-top:8px;min-height:16px;}
+.player{background:#141414;border-radius:16px;padding:16px;border:1px solid #222;margin-top:8px;text-align:left;}
+.now-playing{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#c084fc;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:#c084fc;animation:pdot 1.2s ease-in-out infinite;}
+@keyframes pdot{0%,100%{opacity:1;}50%{opacity:0.2;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="ghost-icon float" id="topGhost">👻</div>
+  <h1>GHOST 9000</h1>
+
+  <div class="admin-link">
+    <button onclick="toggleAdmin()" id="adminToggleBtn">⚙ Admin</button>
+  </div>
+
+  <div class="admin-panel" id="adminPanel" style="display:none">
+    <h3>👁 Admin Portal</h3>
+    <div id="adminLoginSection">
+      <div class="pw-row">
+        <input type="text" class="field" id="pwInput" placeholder="Password..."/>
+        <button class="btn-g" onclick="doLogin()">Enter</button>
+      </div>
+      <div class="admin-status err" id="loginStatus"></div>
+    </div>
+    <div id="adminControlSection" style="display:none">
+      <div class="pw-row">
+        <input type="text" class="field" id="nameSetInput" placeholder="Set victim name..." maxlength="20" autocomplete="off"/>
+        <button class="btn-g green" onclick="setName()">SET</button>
+      </div>
+      <button class="btn-g" style="width:100%;margin-bottom:8px" onclick="clearName()">🔁 Reset visitor</button>
+      <hr class="section-divider"/>
+      <div style="font-size:11px;color:#444;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase;">Change Password</div>
+      <div class="pw-row"><input type="text" class="field" id="newPw1" placeholder="New password..."/></div>
+      <div class="pw-row">
+        <input type="text" class="field" id="newPw2" placeholder="Confirm password..."/>
+        <button class="btn-g amber" onclick="changePassword()">SAVE</button>
+      </div>
+      <div class="admin-status ok" id="adminStatus"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: waiting -->
+  <div id="screenWait" class="screen active">
+    <span class="big-ghost float">👻</span>
+    <div class="screen-msg" id="waitMsg">Awaiting haunting target...</div>
+  </div>
+
+  <!-- SCREEN: tap to hear -->
+  <div id="screenTap" class="screen">
+    <span class="big-ghost pulse">👻</span>
+    <div class="screen-msg">The ghost has something to say...</div>
+    <br/><br/>
+    <button class="tap-btn" onclick="onTap()">👻 Tap to Hear</button>
+  </div>
+
+  <!-- SCREEN: convo -->
+  <div id="screenConvo" class="screen">
+    <span class="big-ghost float" id="convoGhost">👻</span>
+    <div class="screen-msg" id="convoMsg">Tap the mic and ask the ghost anything</div>
+    <div class="transcript" id="transcript"></div>
+    <br/>
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+    <div class="type-row">
+      <input type="text" class="field" id="typeInput" placeholder="Or type your question..." style="font-size:13px;font-weight:400;"/>
+      <button class="btn-g" style="font-size:14px;padding:10px 12px;" onclick="submitTyped()">Ask</button>
+    </div>
+    <div class="err-msg" id="micErr"></div>
+  </div>
+
+  <!-- SCREEN: player -->
+  <div id="screenPlayer" class="screen">
+    <div class="player">
+      <div class="now-playing"><div class="pulse-dot"></div>Now Haunting</div>
+      <audio id="rickAudio" controls style="width:100%;border-radius:10px;">
+        <source src="Never Gonna Give You Up.m4a" type="audio/mp4"/>
+      </audio>
+    </div>
+  </div>
+</div>
+
+<script>
+let adminPassword = 'ghost9000';
+let currentName = null, pendingName = null, nameSpoken = false;
+let recognition = null, isListening = false;
+
+// Simple localStorage for standalone (no window.storage API outside Claude)
+function rs(k){ return localStorage.getItem(k); }
+function ws(k,v){ v!=null ? localStorage.setItem(k,v) : localStorage.removeItem(k); }
+
+function showScreen(id){
+  ['screenWait','screenTap','screenConvo','screenPlayer'].forEach(s=>{
+    document.getElementById(s).classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
+function speak(text, onEnd){
+  window.speechSynthesis.cancel();
+  function trySpeak(){
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.55; u.pitch = 0.1; u.volume = 1;
+    const voices = speechSynthesis.getVoices();
+    const v = voices.find(v=>/male/i.test(v.name) && /en/i.test(v.lang))
+           || voices.find(v=>/en/i.test(v.lang))
+           || voices[0];
+    if(v) u.voice = v;
+    u.onend = ()=>{ if(onEnd) onEnd(); };
+    u.onerror = ()=>{ if(onEnd) onEnd(); };
+    speechSynthesis.speak(u);
+  }
+  const voices = speechSynthesis.getVoices();
+  if(voices.length){ trySpeak(); }
+  else {
+    speechSynthesis.onvoiceschanged = ()=>{ speechSynthesis.onvoiceschanged=null; trySpeak(); };
+  }
+}
+
+function isNameQuestion(t){
+  return /how do you know|who told|know my name|my name|how did you know|who are you|what are you|how|why/i.test(t);
+}
+
+// Admin
+function toggleAdmin(){
+  const p = document.getElementById('adminPanel');
+  const btn = document.getElementById('adminToggleBtn');
+  const open = p.style.display==='none';
+  p.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '✕ Close' : '⚙ Admin';
+}
+function doLogin(){
+  const pw = document.getElementById('pwInput').value;
+  if(pw === adminPassword){
+    document.getElementById('adminLoginSection').style.display='none';
+    document.getElementById('adminControlSection').style.display='block';
+    if(currentName) document.getElementById('nameSetInput').value=currentName;
+  } else {
+    document.getElementById('loginStatus').textContent='Wrong password, mortal.';
+    document.getElementById('pwInput').value='';
+  }
+}
+function changePassword(){
+  const p1 = document.getElementById('newPw1').value.trim();
+  const p2 = document.getElementById('newPw2').value.trim();
+  const st = document.getElementById('adminStatus');
+  if(!p1){st.className='admin-status err';st.textContent='Enter a password.';return;}
+  if(p1!==p2){st.className='admin-status err';st.textContent='Passwords do not match.';return;}
+  adminPassword=p1; ws('ghost9000_pw',p1);
+  document.getElementById('newPw1').value='';
+  document.getElementById('newPw2').value='';
+  st.className='admin-status ok';st.textContent='Password updated.';
+}
+function setName(){
+  const n=(document.getElementById('nameSetInput').value||'').trim();
+  if(!n)return;
+  ws('ghost9000_name',n);
+  document.getElementById('adminStatus').className='admin-status ok';
+  document.getElementById('adminStatus').textContent='"'+n+'" will be haunted.';
+  pendingName=n; currentName=null; nameSpoken=false;
+  showScreen('screenTap');
+}
+function clearName(){
+  ws('ghost9000_name',null);
+  currentName=null; nameSpoken=false; pendingName=null;
+  const a=document.getElementById('rickAudio');
+  if(a){a.pause();a.currentTime=0;}
+  document.getElementById('nameSetInput').value='';
+  document.getElementById('adminStatus').className='admin-status ok';
+  document.getElementById('adminStatus').textContent='Reset.';
+  showScreen('screenWait');
+  document.getElementById('waitMsg').textContent='Awaiting haunting target...';
+}
+
+// Tap
+function onTap(){
+  const name = pendingName;
+  currentName = name; nameSpoken = true;
+  document.getElementById('topGhost').className='ghost-icon pulse';
+  showScreen('screenWait');
+  document.getElementById('waitMsg').textContent='';
+
+  // Cancel any existing speech first
+  speechSynthesis.cancel();
+
+  function doSpeak(){
+    const u = new SpeechSynthesisUtterance(name + '...');
+    u.rate = 0.5; u.pitch = 0.1; u.volume = 1;
+    const voices = speechSynthesis.getVoices();
+    const v = voices.find(v => /male/i.test(v.name) && /en/i.test(v.lang))
+           || voices.find(v => /en/i.test(v.lang))
+           || voices[0];
+    if(v) u.voice = v;
+    u.onend = ()=>{
+      document.getElementById('topGhost').className='ghost-icon float';
+      document.getElementById('convoMsg').textContent='Ask the ghost anything...';
+      document.getElementById('transcript').textContent='';
+      showScreen('screenConvo');
+    };
+    u.onerror = ()=>{
+      document.getElementById('topGhost').className='ghost-icon float';
+      showScreen('screenConvo');
+    };
+    speechSynthesis.speak(u);
+  }
+
+  const voices = speechSynthesis.getVoices();
+  if(voices.length){
+    doSpeak();
+  } else {
+    speechSynthesis.onvoiceschanged = ()=>{
+      speechSynthesis.onvoiceschanged = null;
+      doSpeak();
+    };
+  }
+}
+
+// Mic
+function toggleMic(){ isListening ? stopMic() : startMic(); }
+function startMic(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ document.getElementById('micErr').textContent='Mic not supported — use the text box.'; return; }
+  try{ if(recognition) recognition.abort(); }catch(e){}
+  recognition = new SR();
+  recognition.lang='en-US'; recognition.interimResults=false; recognition.maxAlternatives=1;
+  recognition.onstart=()=>{
+    isListening=true;
+    document.getElementById('micBtn').classList.add('active');
+    document.getElementById('convoMsg').textContent='Listening...';
+    document.getElementById('micErr').textContent='';
+    document.getElementById('convoGhost').className='big-ghost';
+    document.getElementById('convoGhost').style.animation='ghostBob 0.5s ease-in-out infinite alternate';
+  };
+  recognition.onresult=(e)=>{
+    const t=e.results[0][0].transcript;
+    document.getElementById('transcript').textContent='"'+t+'"';
+    handleSpeech(t);
+  };
+  recognition.onerror=(e)=>{
+    const m={'not-allowed':'Mic access denied. Use the text box.','no-speech':'Nothing heard. Try again.','network':'Network error. Use the text box.','audio-capture':'No mic found. Use the text box.'};
+    document.getElementById('micErr').textContent=m[e.error]||'Error: '+e.error;
+    stopMic();
+  };
+  recognition.onend=()=>{ stopMic(); };
+  recognition.start();
+}
+function stopMic(){
+  isListening=false;
+  try{ if(recognition) recognition.abort(); }catch(e){}
+  document.getElementById('micBtn').classList.remove('active');
+  document.getElementById('convoGhost').style.animation='';
+  document.getElementById('convoGhost').className='big-ghost float';
+}
+function submitTyped(){
+  const v=(document.getElementById('typeInput').value||'').trim();
+  if(!v)return;
+  document.getElementById('transcript').textContent='"'+v+'"';
+  document.getElementById('typeInput').value='';
+  handleSpeech(v);
+}
+function handleSpeech(text){
+  if(isNameQuestion(text)){
+    document.getElementById('convoMsg').textContent='The ghost responds...';
+    document.getElementById('convoGhost').style.animation='ghostPulse 0.3s ease-in-out infinite alternate';
+
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance("I'm a ghost. I get this aura from your voice, and it tells me your name!");
+    u.rate = 0.55; u.pitch = 0.1; u.volume = 1;
+    const voices = speechSynthesis.getVoices();
+    const v = voices.find(v => /male/i.test(v.name) && /en/i.test(v.lang))
+           || voices.find(v => /en/i.test(v.lang))
+           || voices[0];
+    if(v) u.voice = v;
+    u.onend = ()=>{
+      document.getElementById('convoGhost').style.animation='';
+      beginRickroll();
+    };
+    u.onerror = ()=>{
+      document.getElementById('convoGhost').style.animation='';
+      beginRickroll();
+    };
+    speechSynthesis.speak(u);
+  } else {
+    document.getElementById('convoMsg').textContent='Ask the ghost how it knows your name...';
+  }
+}
+function beginRickroll(){
+  showScreen('screenPlayer');
+  const a=document.getElementById('rickAudio');
+  if(a){ a.volume=1; a.play().catch(()=>{}); }
+}
+
+// Keyboard shortcuts
+document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('newPw2').addEventListener('keydown',e=>{if(e.key==='Enter')changePassword();});
+document.getElementById('typeInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitTyped();});
+
+// Init
+function init(){
+  const pw=rs('ghost9000_pw'); if(pw) adminPassword=pw;
+  const name=rs('ghost9000_name');
+  if(name){ pendingName=name; currentName=null; showScreen('screenTap'); }
+}
+init();
+</script>
+</body>
+</html>
